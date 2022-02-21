@@ -5,7 +5,7 @@ using namespace std;
 
 class GraphGenerator {
 public:
-
+    //Erdős–Rényi model
     static vector<vector<int>> create_random_graph(int n, double density) {//density [0,1]
         vector<vector<int>> graph(n);
 
