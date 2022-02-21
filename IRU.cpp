@@ -95,7 +95,7 @@ public:
     void compute_hashes() {
         for (int f : frontier) {
             set<int> &bucket = map_of_buckets[f];
-            map_of_buckets[f].insert(f);
+            bucket.insert(f);
 
             if (bucket.size() >= size_of_bucket) {
                 list_of_buckets.push_back(bucket);
