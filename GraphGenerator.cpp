@@ -41,7 +41,7 @@ public:
         return graph;
     }
 
-    void print(const vector<vector<int>> &graph_0) {
+    static void print(const vector<vector<int>> &graph_0) {
 
         for (int i = 0; i < graph_0.size(); i++) {
             cout << i << " -> ";
