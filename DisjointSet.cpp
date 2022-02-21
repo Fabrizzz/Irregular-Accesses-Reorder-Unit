@@ -13,13 +13,13 @@ private:
 
     // perform MakeSet operation
 public:
-    void makeSet(int universe[], int size)
+    void makeSet(const vector<int>& universe)
     {
         // create `n` disjoint sets (one for each item)
-        for (int i = 0; i < size; i++)
+        for (const int & i : universe)
         {
-            parent.insert_or_assign(universe[i], universe[i]);
-            rank.insert_or_assign(universe[i], 0);
+            parent.insert_or_assign(i, i);
+            rank.insert_or_assign(i, 0);
         }
     }
 
@@ -63,10 +63,10 @@ public:
         }
     }
 
-    static void printSets(int universe[], int size, DisjointSet& ds)
+    static void printSets(const vector<int>& universe, DisjointSet& ds)
     {
-        for (int i = 0; i < size; i++)
-            cout << universe[i] << " " << ds.Find(universe[i]) << endl;
+        for (int i : universe)
+            cout << i << " " << ds.Find(i) << endl;
         cout << endl;
     }
 /*
