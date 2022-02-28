@@ -1,76 +1,46 @@
-#include "IRU.cpp"
-#include "GraphGenerator.cpp"
+#include "algorithms/BFS.h"
+
+#include "algorithms/GraphGenerator.cpp"
+
 
 using namespace std;
 
+void testBench(string path, vector<vector<int>> neighbours, int startFrom) {
+    int hashMapDimensioning[] = {32, 100, 500};
+    cout << "Testing of " << path << endl;
+    cout << "BFS without IRU:" << endl;
+    cout << "Average Uncoalesced Accesses per warp: " << BfsBenchmarkWithoutIru(neighbours, startFrom) << endl;
+    for (int val : hashMapDimensioning) {
+        int size = neighbours.size() / val;
+        cout << "Using IRU with bucket Union Optimization:" << endl;
+        cout << "Average Uncoalesced Accesses per warp: " << BfsBenchmark(neighbours, startFrom, false, size) << endl;
+        cout << "Using IRU without Optimization:" << endl;
+        cout << "Average Uncoalesced Accesses per warp: " << BfsBenchmark(neighbours, startFrom, true, size) << endl;
+    }
+    cout << endl;
+
+
+}
 
 int main() {
+    vector<vector<int>> neighbours = GraphGenerator::create_random_graph(10000, 0.01);
+    testBench("RandomGeneratedGraph", neighbours, 0);
+    //https://sparse.tamu.edu/Newman/cond-mat-2005
+    neighbours = GraphGenerator::load_graph_matrix_market("../graphs/cond-mat-2005.mtx");
+    testBench("cond-mat-2005", neighbours, 1);
+    //https://sparse.tamu.edu/Belcastro/human_gene1
+    neighbours = GraphGenerator::load_graph_matrix_market("../graphs/human_gene1.mtx");
+    testBench("human_gene1", neighbours, 25);
+    //https://sparse.tamu.edu/INPRO/msdoor
+    neighbours = GraphGenerator::load_graph_matrix_market("../graphs/msdoor.mtx");
+    testBench("msdoor", neighbours, 1);
+    //https://www.cc.gatech.edu/dimacs10/archive/delaunay.shtml
+    neighbours = GraphGenerator::load_graph_Metis("../graphs/delaunay_n19.graph");
+    testBench("delaunay_n19", neighbours, 1);
+    //https://www.cc.gatech.edu/dimacs10/archive/kronecker.shtml
+    neighbours = GraphGenerator::load_graph_Metis("../graphs/kron_g500-simple-logn18.graph");
+    testBench("kron_g500-simple-logn18", neighbours, 1);
 
-    int number_of_nodes = 1000; //todo take this 4 parameters from stdin
-    double density_of_arcs = 0.01;
-    int number_of_warps = 2;
-    int threads_per_warp = 32;
-
-    //todo can i use a vector instead?
-    int *distances = new int[number_of_nodes]();
-
-    vector<int> frontier;
-    vector<vector<int>> neighbours = GraphGenerator::create_random_graph(number_of_nodes, density_of_arcs);
-
-    for (int i = 0; i < number_of_nodes; i++)
-        distances[i] = -1;
-
-    frontier.push_back(0);
-    IRU<int> iru(reinterpret_cast<int *>(distances), frontier, threads_per_warp, false);
-
-    int distance = -1;
-    cout << "Starting BFS" << endl;
-    iru.compute_hashes();
-
-    do {
-
-        distance++;
-
-        for (int warp = 0; !iru.empty_frontier(); warp = warp == number_of_warps - 1 ? 0 : warp + 1) {
-            for (int thread = 0; thread < threads_per_warp; thread++) {
-                int current_index;
-                bool loaded = iru.load_iru(current_index);
-                //todo test BFS without the IRU to see the difference
-                if (!loaded) {
-                    if (thread == 0)
-                        warp--;
-                    break;
-                }
-
-                //cout << "current index: "<< current_index<<endl;
-                //iru.print_frontier();
-                if (distances[current_index] == -1) {
-                    distances[current_index] = distance;
-                    //here terminates the optimized block
-                    vector<int> &current_neighbours = neighbours[current_index];
-                    for (int i : current_neighbours) {
-
-                        if (distances[i] == -1)
-                            frontier.push_back(i);
-                    }
-                    //todo should i add all the neighbours to the frontier to avoid accessing the distances vector uncoalesced?
-                    //frontier.insert(frontier.end(),current_neighbours.begin(),current_neighbours.end());
-                }
-            }
-        }
-        cout << "The " << distance << " level of BFS completed" << endl;
-        iru.compute_hashes();
-        //iru.print_frontier();
-    } while (!iru.empty_frontier());
-
-    for (int i = 0; i < number_of_nodes; i++) {
-        if (distances[i] == -1) {
-            cout << "Something is wrong, at least a Node wasn't visited";
-            delete[](distances);
-            return 1;
-        }
-    }
-
-    delete[](distances);
     return 0;
 }
+

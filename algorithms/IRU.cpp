@@ -9,51 +9,40 @@
 
 using namespace std;
 
-//todo set this log(size_of_buckets)+log(sizeof(T))+1
 const static int bits_to_ignore = 8; //Array of int, 4 bytes each. I want to fill buckets of 32 elements 2^5
+//1 + log2(size_of_buckets) + log2(sizeof(int));
 
 template<typename T>
 class IRU {
 
+    const int number_of_buckets;
     vector<int> &frontier; //frontier
     int size_of_bucket;
     deque<set<int>> list_of_buckets;
     bool usingLastBucket = false;
     bool one_bucket_per_warp;  //never mix two non-full list_of_buckets to try to create a new full one
 
-    int *secondary_array = nullptr; //todo associate each element of the secondary to each element of the frontier when reordering the frontier
-    void (*filter_op)(int,
-                      int) = nullptr; //todo apply this function to the secondary array each time two elements of the frontier are equals
 
     class MyHash {
         T *arr;
     public:
         explicit MyHash(T *arr) : arr(arr) {}
-
         std::size_t operator()(int i) const {
             return ((std::size_t) (arr + i)) >> bits_to_ignore;
         }
     };
 
-    class MyKeyEquals {
-        T *arr;
-    public:
-        explicit MyKeyEquals(T *arr) : arr(arr) {}
-
-        bool operator()(int i, int j) const {
-            return (((std::size_t) (arr + i)) >> bits_to_ignore) == (((std::size_t) (arr + j)) >> bits_to_ignore);
-        }
-    };
-
-    //todo sort the set<int> by the most 32-8 significant bits
-    unordered_map<int, set<int>, MyHash, MyKeyEquals> map_of_buckets;
+    vector<set<int>> map_of_buckets;
+    MyHash hashingFunction;
 
 public:
-    IRU(T *targetArray, vector<int> &indicesArray, int sizeOfBucket, bool never_unite_buckets) :
+    IRU(T *targetArray, vector<int> &indicesArray, int sizeOfBucket, bool never_unite_buckets, int number_of_buckets) :
             frontier(indicesArray),
             size_of_bucket(sizeOfBucket),
-            map_of_buckets(200, MyHash(targetArray), MyKeyEquals(targetArray)),
-            one_bucket_per_warp(never_unite_buckets) {}
+            map_of_buckets(number_of_buckets),
+            one_bucket_per_warp(never_unite_buckets),
+            hashingFunction(targetArray),
+            number_of_buckets(number_of_buckets) {}
 
     //
     bool load_iru(int &index) {
@@ -93,24 +82,26 @@ public:
 
     // compute all the hashes of the frontier
     void compute_hashes() {
-        for (int f : frontier) {
-            set<int> &bucket = map_of_buckets[f];
+        for (int f: frontier) {
+            int hashValue = hashingFunction.operator()(f) % number_of_buckets;
+            set<int> &bucket = map_of_buckets[hashValue];
             bucket.insert(f);
 
             if (bucket.size() >= size_of_bucket) {
-                list_of_buckets.push_back(bucket);
-                map_of_buckets.erase(f);
+                list_of_buckets.template emplace_back(bucket);
+                bucket.clear();
             }
 
         }
-        cout << "number of partial buckets: " << map_of_buckets.size() << '\n';
-        cout << "number of complete buckets: " << list_of_buckets.size() << '\n';
+        //cout << "number of complete buckets: " << list_of_buckets.size() << '\n';
 
-        for (auto&&[_, second] : map_of_buckets) {
-            list_of_buckets.push_back(second);
+        for (auto &second: map_of_buckets) {
+            if (!second.empty()) {
+                list_of_buckets.emplace_back(second);
+                second.clear();
+            }
         }
         frontier.clear();
-        map_of_buckets.clear();
         sort(list_of_buckets.begin(), list_of_buckets.end(), [](const set<int> &a, const set<int> &b) {
             return (a.size() < b.size());
         });
@@ -120,7 +111,7 @@ public:
 
     void print_frontier() {
         for (const auto &buck: list_of_buckets) {
-            for (auto index : buck) {
+            for (auto index: buck) {
                 cout << index << " ";
             }
             cout << endl;
