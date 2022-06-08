@@ -5,6 +5,7 @@ include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 20)
 add_executable(Irregular_Accesses_Reorder_Unit algorithms/DisjointSet.cpp algorithms/GraphGenerator.cpp algorithms/IRU.cpp main.cpp algorithms/BFS.cpp algorithms/BFS.h)
+
 FetchContent_Declare(
         graph1
         URL https://suitesparse-collection-website.herokuapp.com/MM/Newman/cond-mat-2005.tar.gz
