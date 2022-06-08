@@ -5,7 +5,7 @@
 
 using namespace std;
 
-void testBench(string path, vector<vector<int>> neighbours, int startFrom) {
+void testBench(const string& path, const vector<vector<int>>& neighbours, int startFrom) {
     int hashMapDimensioning[] = {32, 100, 500};
     cout << "Testing of " << path << endl;
     cout << "BFS without IRU:" << endl;
