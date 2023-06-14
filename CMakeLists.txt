@@ -9,51 +9,72 @@ add_executable(Irregular_Accesses_Reorder_Unit algorithms/DisjointSet.cpp algori
 FetchContent_Declare(
         graph1
         URL https://suitesparse-collection-website.herokuapp.com/MM/Newman/cond-mat-2005.tar.gz
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
 )
 FetchContent_Declare(
         graph2
         URL https://suitesparse-collection-website.herokuapp.com/MM/Belcastro/human_gene1.tar.gz
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
 )
 FetchContent_Declare(
         graph3
         URL https://suitesparse-collection-website.herokuapp.com/MM/INPRO/msdoor.tar.gz
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
 )
 FetchContent_Declare(
         graph4
         URL https://www.cc.gatech.edu/dimacs10/archive/data/delaunay/delaunay_n19.graph.bz2
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
         DOWNLOAD_NO_EXTRACT true
 )
 FetchContent_Declare(
         graph5
         URL https://www.cc.gatech.edu/dimacs10/archive/data/kronecker/kron_g500-simple-logn18.graph.bz2
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
         DOWNLOAD_NO_EXTRACT true
 )
 
-FetchContent_MakeAvailable(graph1 graph2 graph3 graph4 graph5)
+FetchContent_GetProperties(graph1 graph2 graph3 graph4 graph5)
 
-execute_process(
-COMMAND bzip2 -dk _deps/graph4-src/delaunay_n19.graph.bz2
-COMMAND bzip2 -dk _deps/graph5-src/kron_g500-simple-logn18.graph.bz2
-)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/graphs)
 
-file(MAKE_DIRECTORY graphs)
-file(RENAME _deps/graph1-src/cond-mat-2005.mtx graphs/cond-mat-2005.mtx)
-file(RENAME _deps/graph2-src/human_gene1.mtx graphs/human_gene1.mtx)
-file(RENAME _deps/graph3-src/msdoor.mtx graphs/msdoor.mtx)
-file(RENAME _deps/graph4-src/delaunay_n19.graph graphs/delaunay_n19.graph)
-file(RENAME _deps/graph5-src/kron_g500-simple-logn18.graph graphs/kron_g500-simple-logn18.graph)
+if(NOT graph1_POPULATED)
+  FetchContent_Populate(graph1)
+endif()
+
+if(EXISTS ${graph1_SOURCE_DIR}/cond-mat-2005.mtx AND NOT EXISTS ${CMAKE_BINARY_DIR}/graphs/cond-mat-2005.mtx)
+    file(RENAME ${graph1_SOURCE_DIR}/cond-mat-2005.mtx  ${CMAKE_BINARY_DIR}/graphs/cond-mat-2005.mtx)
+endif()
+
+if(NOT graph2_POPULATED)
+  FetchContent_Populate(graph2)
+endif()
+
+if(EXISTS ${graph2_SOURCE_DIR}/human_gene1.mtx AND NOT EXISTS ${CMAKE_BINARY_DIR}/graphs/human_gene1.mtx)
+    file(RENAME ${graph2_SOURCE_DIR}/human_gene1.mtx ${CMAKE_BINARY_DIR}/graphs/human_gene1.mtx)
+endif()
+
+if(NOT graph3_POPULATED)
+  FetchContent_Populate(graph3)
+endif()
+
+if(EXISTS ${graph3_SOURCE_DIR}/msdoor.mtx AND NOT EXISTS ${CMAKE_BINARY_DIR}/graphs/msdoor.mtx)
+    file(RENAME ${graph3_SOURCE_DIR}/msdoor.mtx ${CMAKE_BINARY_DIR}/graphs/msdoor.mtx)
+endif()
+
+if(NOT graph4_POPULATED)
+  FetchContent_Populate(graph4)
+endif()
+
+if(NOT EXISTS ${CMAKE_BINARY_DIR}/graphs/delaunay_n19.graph)
+    execute_process(
+        COMMAND bzip2 -dk ${graph4_SOURCE_DIR}/delaunay_n19.graph.bz2
+      )
+      file(RENAME ${graph4_SOURCE_DIR}/delaunay_n19.graph ${CMAKE_BINARY_DIR}/graphs/delaunay_n19.graph)
+endif()
+
+if(NOT graph5_POPULATED)
+  FetchContent_Populate(graph5)
+endif()
+
+if(NOT EXISTS ${CMAKE_BINARY_DIR}/graphs/kron_g500-simple-logn18.graph)
+      execute_process(
+          COMMAND bzip2 -dk ${graph5_SOURCE_DIR}/kron_g500-simple-logn18.graph.bz2
+        )
+        file(RENAME ${graph5_SOURCE_DIR}/kron_g500-simple-logn18.graph ${CMAKE_BINARY_DIR}/graphs/kron_g500-simple-logn18.graph)
+  endif()
