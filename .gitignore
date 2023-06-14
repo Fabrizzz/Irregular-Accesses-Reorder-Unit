@@ -1,2 +1,8 @@
-/cmake-build-debug/
+/.cmake/
 /graphs/
+/_deps/
+/.vscode/
+/CMakeFiles/
+/cmake_install.cmake
+/CMakeCache.txt
+/build/
